@@ -1,24 +1,22 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+import jwt from "jsonwebtoken";
+
 
 const router = express.Router();
-
 
 router.post("/signup", async (req, res) => {
   try {
     const { name, age, number, password } = req.body;
-
     
     const userExists = await User.findOne({ number });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-  
     const hashedPassword = await bcrypt.hash(password, 10);
 
-   
     await User.create({
       name,
       age,
@@ -32,37 +30,31 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-
 router.post("/login", async (req, res) => {
   try {
     const { number, password } = req.body;
 
     const user = await User.findOne({ number });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
+    const token = jwt.sign(
+      { userId: user._id },     
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
     res.json({
       message: "Login successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        age: user.age,
-        number: user.number,
-      },
+      token
     });
-    
-    console.log("login successful");
-  
-  } catch (error) {
+
+  } catch (err) {
     res.status(500).json({ message: "Login failed" });
   }
 });
+
 
 export default router;
