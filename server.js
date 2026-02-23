@@ -5,24 +5,26 @@ import connectDB from "./config/dbc.js";
 
  import authRoutes from "./routes/authRoutes.js";
  import productRoutes from "./routes/productRoutes.js";
- import cartRoutes from "./routes/cartRoutes.js";    
+ import cartRoutes from "./routes/cartRoutes.js";
+ import orderRoutes from "./routes/orderRoutes.js";
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-// app.use(cors({
-//   origin: "https://bytespark-personal-care.vercel.app",
-// }));
+app.use(cors({
+  origin: "https://bytespark-personal-care.vercel.app",
+}));
 
-app.use(cors()); 
+// app.use(cors()); 
 
 app.use(express.json());
 
  app.use("/api/auth", authRoutes);
  app.use("/api/products", productRoutes);
  app.use("/api/cart", cartRoutes);
+ app.use("/api/orders", orderRoutes);
 
 app.get("/", (req, res) => {
   res.send("Bytespark Backend Running");
