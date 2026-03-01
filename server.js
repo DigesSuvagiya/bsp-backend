@@ -13,11 +13,11 @@ connectDB();
 
 const app = express();
 
-app.use(cors({
-  origin: "https://bytespark-personal-care.vercel.app",
-}));
+// app.use(cors({
+//   origin: "https://bytespark-personal-care.vercel.app",
+// }));
 
-// app.use(cors()); 
+app.use(cors()); 
 
 app.use(express.json());
 

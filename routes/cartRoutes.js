@@ -1,7 +1,7 @@
 // routes/cartRoutes.js
 import express from "express";
 import Cart from "../models/Cart.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, requireUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -12,13 +12,13 @@ const getPopulatedItems = async (userId) => {
 };
 
 // Get cart
-router.get("/", protect, async (req, res) => {
+router.get("/", protect, requireUser, async (req, res) => {
   const items = await getPopulatedItems(req.userId);
   res.json(items);
 });
 
 // Add to cart
-router.post("/add", protect, async (req, res) => {
+router.post("/add", protect, requireUser, async (req, res) => {
   try {
     const { productId } = req.body;
 
@@ -52,7 +52,7 @@ router.post("/add", protect, async (req, res) => {
 });
 
 // Increase quantity
-router.put("/increase", protect, async (req, res) => {
+router.put("/increase", protect, requireUser, async (req, res) => {
   try {
     const { productId } = req.body;
 
@@ -90,7 +90,7 @@ router.put("/increase", protect, async (req, res) => {
 });
 
 // Decrease quantity
-router.put("/decrease", protect, async (req, res) => {
+router.put("/decrease", protect, requireUser, async (req, res) => {
   try {
     const { productId } = req.body;
 
@@ -134,7 +134,7 @@ router.put("/decrease", protect, async (req, res) => {
 });
 
 // Remove item
-router.delete("/remove/:productId", protect, async (req, res) => {
+router.delete("/remove/:productId", protect, requireUser, async (req, res) => {
   try {
     const { productId } = req.params;
 
@@ -174,7 +174,7 @@ router.delete("/remove/:productId", protect, async (req, res) => {
 });
 
 // Clear cart
-router.delete("/clear", protect, async (req, res) => {
+router.delete("/clear", protect, requireUser, async (req, res) => {
   await Cart.findOneAndUpdate({ user: req.userId }, { items: [] });
 
   // ✅ return populated (empty) items

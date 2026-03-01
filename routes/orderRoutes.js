@@ -1,11 +1,11 @@
 import express from "express";
 import Cart from "../models/Cart.js";
 import Order from "../models/Order.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, requireAdmin, requireUser } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", protect, async (req, res) => {
+router.post("/", protect, requireUser, async (req, res) => {
   try {
     const { shipping, paymentMethod = "cod" } = req.body;
 
@@ -60,7 +60,7 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-router.get("/my-orders", protect, async (req, res) => {
+router.get("/my-orders", protect, requireUser, async (req, res) => {
   try {
     const orders = await Order.find({ user: req.userId }).sort({ createdAt: -1 });
     res.json(orders);
@@ -70,7 +70,63 @@ router.get("/my-orders", protect, async (req, res) => {
   }
 });
 
-router.get("/:id", protect, async (req, res) => {
+router.get("/admin/all", protect, requireAdmin, async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("user", "name number")
+      .sort({ createdAt: -1 });
+
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching all orders for admin:", error);
+    res.status(500).json({ message: "Failed to fetch orders" });
+  }
+});
+
+router.get("/admin/:id", protect, requireAdmin, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate("user", "name number");
+
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    res.json(order);
+  } catch (error) {
+    console.error("Error fetching order details for admin:", error);
+    res.status(500).json({ message: "Failed to fetch order" });
+  }
+});
+
+router.patch("/admin/:id/status", protect, requireAdmin, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const allowedStatuses = Order.schema.path("status").enumValues || [];
+
+    if (!status || !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        message: "Invalid status value",
+        allowedStatuses,
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    order.status = status;
+    await order.save();
+
+    const updatedOrder = await Order.findById(order._id).populate("user", "name number");
+    return res.json(updatedOrder);
+  } catch (error) {
+    console.error("Error updating order status for admin:", error);
+    return res.status(500).json({ message: "Failed to update order status" });
+  }
+});
+
+router.get("/:id", protect, requireUser, async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
 
